@@ -12,7 +12,7 @@ Add `logsnag_ex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:logsnag_ex, "~> 0.1.0"}
+    {:logsnag_ex, "~> 1.0.0"}
   ]
 end
 ```

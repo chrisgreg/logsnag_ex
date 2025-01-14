@@ -4,7 +4,7 @@ defmodule LogsnagEx.MixProject do
   def project do
     [
       app: :logsnag_ex,
-      version: "0.1.0",
+      version: "1.0.0",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       package: package(),
