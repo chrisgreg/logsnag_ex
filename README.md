@@ -7,7 +7,7 @@ An Elixir client for [LogSnag](https://logsnag.com) - The event tracking platfor
 
 ## Installation
 
-Add `logsnag` to your list of dependencies in `mix.exs`:
+Add `logsnag_ex` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -24,19 +24,9 @@ Configure LogSnag in your `config/config.exs` (or environment-specific config fi
 ```elixir
 config :logsnag_ex,
   default: [
-    token: "your-token",
-    project: "your-project",
-    disabled: Mix.env() != :prod # optional, defaults to false
-  ]
-```
-
-For multiple environments, you might want to use environment variables:
-
-```elixir
-config :logsnag_ex,
-  default: [
     token: System.get_env("LOGSNAG_TOKEN"),
-    project: System.get_env("LOGSNAG_PROJECT")
+    project: System.get_env("LOGSNAG_PROJECT"),
+    disabled: Mix.env() != :prod # optional, defaults to false
   ]
 ```
 
@@ -47,12 +37,12 @@ You can configure multiple LogSnag clients for different purposes:
 ```elixir
 config :logsnag_ex,
   default: [
-    token: "default-token",
-    project: "default-project"
+    token: System.get_env("LOGSNAG_TOKEN"),
+    project: System.get_env("LOGSNAG_PROJECT")
   ],
   analytics: [
-    token: "analytics-token",
-    project: "analytics-project",
+    token: System.get_env("LOGSNAG_TOKEN"),
+    project: System.get_env("LOGSNAG_PROJECT_2"),
     name: MyApp.AnalyticsLogSnag
   ]
 ```
@@ -66,6 +56,54 @@ children = [
 ]
 ```
 
+## Setup
+
+The library is an OTP application, so it will automatically start its supervision tree. You don't need to add anything to your supervision tree unless you're using multiple clients.
+
+### Single Client (Default)
+
+Just add the configuration to your `config/config.exs`:
+
+```elixir
+config :logsnag_ex,
+  default: [
+    token: System.get_env("LOGSNAG_TOKEN"),
+    project: System.get_env("LOGSNAG_PROJECT")
+  ]
+```
+
+### Multiple Clients
+
+For multiple clients, configure them in your config:
+
+```elixir
+config :logsnag_ex,
+  default: [
+    token: System.get_env("LOGSNAG_TOKEN"),
+    project: System.get_env("LOGSNAG_PROJECT")
+  ],
+  analytics: [
+    token: System.get_env("LOGSNAG_TOKEN"),
+    project: System.get_env("LOGSNAG_PROJECT_2"),
+    client: MyApp.AnalyticsLogSnag
+  ]
+```
+
+Then add the additional clients to your supervision tree:
+
+```elixir
+# lib/your_app/application.ex
+def start(_type, _args) do
+  children = [
+    # ... your other children ...
+    {LogsnagEx.Client, Application.get_env(:logsnag_ex, :analytics, [])}
+  ]
+
+  opts = [strategy: :one_for_one, name: YourApp.Supervisor]
+  Supervisor.start_link(children, opts)
+end
+```
+
 ## Usage
 
 ### Tracking Events
@@ -74,24 +112,18 @@ children = [
 # Simple event
 LogsnagEx.track("user-signup", "New User Registered")
 
-# Event with description and icon
+# Event with all options
 LogsnagEx.track("payments", "Payment Received",
   description: "User completed payment for premium plan",
-  icon: "💰"
-)
-
-# Event with tags and notification
-LogsnagEx.track("orders", "Order Fulfilled",
+  icon: "💰",
   tags: %{
     order_id: "12345",
     amount: "$99.99"
   },
-  notify: true
-)
-
-# Event with custom client
-LogsnagEx.track("analytics", "Page View",
-  client: MyApp.AnalyticsLogSnag
+  notify: true,
+  user_id: "user-123",  # Optional user association
+  parser: "markdown",   # Optional: "markdown" or "text"
+  date: DateTime.utc_now()  # Optional timestamp
 )
 ```
 
@@ -162,12 +194,35 @@ LogsnagEx.group("user-123", "org-456",
 For development or testing, you can disable tracking:
 
 ```elixir
-config :logsnag,
+config :logsnag_ex,
   default: [
     token: "test-token",
     project: "test-project",
     disabled: true
   ]
+```
+
+## Testing
+
+The package uses Mox for testing. In your `test_helper.exs`:
+
+```elixir
+Mox.defmock(LogsnagEx.MockClient, for: LogsnagEx.Client.Behaviour)
+Application.put_env(:logsnag_ex, :client_module, LogsnagEx.MockClient)
+```
+
+Example test:
+
+```elixir
+test "track/3 sends a log event" do
+  expect(LogsnagEx.MockClient, :request, fn :post, "/log", body, _name ->
+    assert body["channel"] == "test-channel"
+    assert body["event"] == "test-event"
+    {:ok, body}
+  end)
+
+  assert {:ok, response} = LogsnagEx.track("test-channel", "test-event")
+end
 ```
 
 ## Error Handling
