@@ -11,7 +11,7 @@ defmodule LogsnagEx.MixProject do
       deps: deps(),
       name: "LogsnagEx",
       description: "Logsnag client for Elixir",
-      source_url: "https://github.com/chrisgreg/logsnag-ex",
+      source_url: "https://github.com/chrisgreg/logsnag_ex",
       docs: [
         main: "LogsnagEx",
         extras: ["README.md"]
@@ -29,7 +29,7 @@ defmodule LogsnagEx.MixProject do
     [
       name: "logsnag_ex",
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/chrisgreg/logsnag-ex"}
+      links: %{"GitHub" => "https://github.com/chrisgreg/logsnag_ex"}
     ]
   end
 
