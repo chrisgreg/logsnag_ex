@@ -4,7 +4,7 @@ defmodule LogsnagEx.MixProject do
   def project do
     [
       app: :logsnag_ex,
-      version: "1.0.0",
+      version: "1.0.1",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       package: package(),
@@ -35,7 +35,7 @@ defmodule LogsnagEx.MixProject do
 
   defp deps do
     [
-      {:req, "~> 0.4.0"},
+      {:req, "~> 0.4"},
       {:jason, "~> 1.4"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:mox, "~> 1.0", only: :test}
